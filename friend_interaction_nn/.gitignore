@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+trained_model/
+*.pt
+predictions.csv
+prediction.csv
+

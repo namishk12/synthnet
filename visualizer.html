@@ -1,0 +1,1640 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Telecom CGAN Data Visualizer</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --surface-2: #eef3f7;
+      --ink: #18202b;
+      --muted: #647080;
+      --line: #d8e0e8;
+      --blue: #2563eb;
+      --green: #059669;
+      --amber: #d97706;
+      --rose: #e11d48;
+      --cyan: #0891b2;
+      --violet: #7c3aed;
+      --shadow: 0 10px 28px rgba(24, 32, 43, 0.08);
+      --radius: 8px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(10px);
+    }
+
+    .topbar-inner {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand {
+      min-width: 220px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .brand .subtle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 6px;
+      min-height: 34px;
+      padding: 0 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tab-button.active {
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 1px 5px rgba(24, 32, 43, 0.12);
+    }
+
+    .top-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-button,
+    .text-button {
+      min-height: 36px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .icon-button {
+      width: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+    }
+
+    .text-button {
+      padding: 0 12px;
+      font-weight: 650;
+    }
+
+    .user-link {
+      border: 0;
+      background: transparent;
+      color: var(--blue);
+      padding: 0;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .user-link:hover {
+      text-decoration: underline;
+    }
+
+    .text-button.primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--amber);
+      flex: 0 0 auto;
+    }
+
+    .status-dot.ready {
+      background: var(--green);
+    }
+
+    .status-dot.error {
+      background: var(--rose);
+    }
+
+    main {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: 18px 20px 28px;
+      flex: 1;
+    }
+
+    .load-banner {
+      display: none;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid #f2c97d;
+      background: #fff8ec;
+      border-radius: var(--radius);
+      color: #744400;
+      margin-bottom: 16px;
+    }
+
+    .load-banner.visible {
+      display: flex;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .kpi-card,
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-card {
+      padding: 13px 14px;
+      min-height: 92px;
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      font-weight: 740;
+    }
+
+    .kpi-value {
+      margin-top: 8px;
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .kpi-note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+      gap: 14px;
+    }
+
+    .grid-three {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .panel-header {
+      min-height: 50px;
+      padding: 12px 14px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.25;
+      font-weight: 760;
+    }
+
+    .panel-subtitle {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .panel-body {
+      padding: 14px;
+    }
+
+    canvas.chart {
+      width: 100%;
+      height: 300px;
+      display: block;
+    }
+
+    #networkCanvas {
+      width: 100%;
+      height: min(62vh, 620px);
+      min-height: 430px;
+      display: block;
+      background:
+        linear-gradient(90deg, rgba(216, 224, 232, 0.48) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(216, 224, 232, 0.48) 1px, transparent 1px),
+        #fbfcfd;
+      background-size: 38px 38px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .control {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .control input[type="range"] {
+      width: 160px;
+      accent-color: var(--blue);
+    }
+
+    .search-input {
+      min-height: 38px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 0 11px;
+      outline: none;
+      min-width: 260px;
+    }
+
+    .search-input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+    }
+
+    .table-wrap {
+      max-height: 420px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 620px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f9fbfd;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    tr:hover td {
+      background: #f6f9fc;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .badge.inferred {
+      color: #075985;
+      border-color: #bae6fd;
+      background: #e0f2fe;
+    }
+
+    .badge.observed {
+      color: #166534;
+      border-color: #bbf7d0;
+      background: #dcfce7;
+    }
+
+    .detail-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .detail-item {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .detail-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .detail-item strong {
+      display: block;
+      overflow-wrap: anywhere;
+      font-size: 13px;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      padding: 28px 16px;
+      text-align: center;
+    }
+
+    .file-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .file-row strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    @media (max-width: 1120px) {
+      .kpi-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .grid-two,
+      .grid-three {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .topbar-inner {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .brand {
+        min-width: 0;
+      }
+
+      .brand .subtle {
+        white-space: normal;
+      }
+
+      .top-actions {
+        margin-left: 0;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .file-list,
+      .detail-list {
+        grid-template-columns: 1fr;
+      }
+
+      .search-input {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .control-row {
+        align-items: stretch;
+      }
+
+      .control {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <h1>Telecom CGAN Visualizer</h1>
+          <div class="subtle" id="runSummary">Loading generated CSVs</div>
+        </div>
+        <nav class="tabs" aria-label="Dashboard views">
+          <button class="tab-button active" data-tab="overview">Overview</button>
+          <button class="tab-button" data-tab="network">Friend Graph</button>
+          <button class="tab-button" data-tab="subscriber">Subscriber</button>
+          <button class="tab-button" data-tab="files">Files</button>
+        </nav>
+        <div class="top-actions">
+          <span id="statusDot" class="status-dot" title="Loading"></span>
+          <button class="icon-button" id="reloadButton" title="Reload CSV data" aria-label="Reload CSV data">↻</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="load-banner" id="loadBanner">
+        <strong>Data load issue</strong>
+        <span id="loadMessage"></span>
+      </div>
+
+      <section class="kpi-grid" id="kpiGrid"></section>
+
+      <section class="section active" id="overview">
+        <div class="grid-two">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Activity by Hour</h2>
+                <div class="panel-subtitle">Generated CDR and IPDR event timing</div>
+              </div>
+              <div class="legend">
+                <span class="legend-item"><span class="swatch" style="background:#2563eb"></span>Calls</span>
+                <span class="legend-item"><span class="swatch" style="background:#059669"></span>Sessions</span>
+              </div>
+            </div>
+            <div class="panel-body">
+              <canvas class="chart" id="hourlyChart"></canvas>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">GAN Friend Edge Sources</h2>
+                <div class="panel-subtitle">Observed training links versus inferred links</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <canvas class="chart" id="edgeSourceChart"></canvas>
+            </div>
+          </article>
+        </div>
+
+        <div class="grid-three">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Telecom Circles</h2>
+                <div class="panel-subtitle">Subscriber distribution</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <canvas class="chart" id="circleChart"></canvas>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Device Capability</h2>
+                <div class="panel-subtitle">Generated subscriber devices</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <canvas class="chart" id="deviceChart"></canvas>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Top Destination IPs</h2>
+                <div class="panel-subtitle">IPDR session endpoints</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <canvas class="chart" id="destIpChart"></canvas>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="network">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Conditional GAN Friend Graph</h2>
+              <div class="panel-subtitle">Top inferred friend/contact edges by model score</div>
+            </div>
+            <div class="control-row">
+              <label class="control">
+                Edges
+                <input id="edgeLimit" type="range" min="25" max="300" step="25" value="150">
+                <strong id="edgeLimitValue">150</strong>
+              </label>
+              <button class="text-button" id="redrawGraph">Redraw</button>
+            </div>
+          </div>
+          <canvas id="networkCanvas"></canvas>
+        </article>
+
+        <div class="grid-two" style="margin-top:14px">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Strongest GAN-Inferred Friend Edges</h2>
+                <div class="panel-subtitle">Sorted by `gan_friend_score`</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table id="topEdgesTable"></table>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Most Connected Subscribers</h2>
+                <div class="panel-subtitle">Degree in the exported friend/contact graph</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table id="degreeTable"></table>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="subscriber">
+        <div class="grid-two">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Subscriber Lookup</h2>
+                <div class="panel-subtitle">Search by generated ID, MSISDN, or source identifier</div>
+              </div>
+              <input class="search-input" id="subscriberSearch" placeholder="SUB_0000642, +9193..., or source ID">
+            </div>
+            <div class="panel-body">
+              <div id="subscriberDetails" class="empty-state">Select a subscriber to inspect profile and contacts.</div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Friend/Contact Edges</h2>
+                <div class="panel-subtitle">Observed and GAN-inferred relationships for the selected subscriber</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table id="subscriberEdgesTable"></table>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="grid-two" style="margin-top:14px">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Selected User CDR</h2>
+                <div class="panel-subtitle">Clean call-detail records for the selected subscriber</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table id="subscriberCallsTable"></table>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Selected User IPDR</h2>
+                <div class="panel-subtitle">Clean internet-session records for the selected subscriber</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table id="subscriberSessionsTable"></table>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="files">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Loaded Files</h2>
+              <div class="panel-subtitle">CSV sources used by this dashboard</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="file-list" id="fileList"></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const files = {
+      subscribers: "subscribers.csv",
+      calls: "call_logs_cdr_schema_clean.csv",
+      sessions: "internet_sessions_ipdr_schema_clean.csv",
+      friendEdges: "conditional_gan_friend_edges_clean.csv",
+      inferredEdges: "gan_inferred_friend_edges_clean.csv"
+    };
+
+    const palette = ["#2563eb", "#059669", "#d97706", "#e11d48", "#0891b2", "#7c3aed", "#475569", "#16a34a"];
+    const state = {
+      data: {},
+      indexes: {},
+      selectedSubscriberId: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let value = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && next === '"') {
+            value += '"';
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === "," && !inQuotes) {
+          row.push(value);
+          value = "";
+        } else if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && next === "\n") i += 1;
+          row.push(value);
+          if (row.some((cell) => cell.length > 0)) rows.push(row);
+          row = [];
+          value = "";
+        } else {
+          value += char;
+        }
+      }
+
+      if (value.length || row.length) {
+        row.push(value);
+        if (row.some((cell) => cell.length > 0)) rows.push(row);
+      }
+
+      const headers = rows.shift() || [];
+      return rows.map((cells) => {
+        const item = {};
+        headers.forEach((header, index) => {
+          item[header] = cells[index] ?? "";
+        });
+        return item;
+      });
+    }
+
+    async function loadCSV(path) {
+      const response = await fetch(path + "?v=" + Date.now());
+      if (!response.ok) {
+        throw new Error(`${path}: HTTP ${response.status}`);
+      }
+      const text = await response.text();
+      return parseCSV(text);
+    }
+
+    function number(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function fmt(value) {
+      return new Intl.NumberFormat("en-IN").format(Math.round(value));
+    }
+
+    function pct(value) {
+      return `${(value * 100).toFixed(1)}%`;
+    }
+
+    function isTruthy(value) {
+      return ["true", "1", "yes"].includes(String(value ?? "").trim().toLowerCase());
+    }
+
+    function firstValue(row, keys) {
+      for (const key of keys) {
+        const value = row[key];
+        if (value !== undefined && value !== null && String(value).trim() !== "") {
+          return String(value).trim();
+        }
+      }
+      return "";
+    }
+
+    function cleanPhoneKey(value) {
+      return String(value || "").replace(/\D/g, "");
+    }
+
+    function addLookup(map, key, subscriberId) {
+      const text = String(key || "").trim();
+      if (!text) return;
+      map.set(text.toLowerCase(), subscriberId);
+      const digits = cleanPhoneKey(text);
+      if (digits) map.set(digits, subscriberId);
+    }
+
+    function parseDate(value) {
+      if (!value) return null;
+      const text = String(value).trim();
+      const dateTimeMatch = text.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (dateTimeMatch) {
+        const [, y, m, d, hh, mm, ss = "0"] = dateTimeMatch;
+        return new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss));
+      }
+
+      const dayFirstMatch = text.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+      if (dayFirstMatch) {
+        const [, d, m, y, hh = "0", mm = "0", ss = "0"] = dayFirstMatch;
+        return new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm), Number(ss));
+      }
+
+      const date = new Date(text.replace(" ", "T"));
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function parseDateParts(dateValue, timeValue) {
+      const combined = [dateValue, timeValue].filter(Boolean).join(" ").trim();
+      return parseDate(combined);
+    }
+
+    function displayDate(date, fallback = "") {
+      if (!date || Number.isNaN(date.getTime())) return fallback || "";
+      return date.toLocaleString("en-IN", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function normalizeCall(row) {
+      const timestamp = parseDate(row.timestamp)
+        || parseDateParts(row.Call_Date, row["Call_Initiation_Time(CIT)"]);
+      return {
+        ...row,
+        _timestamp: timestamp,
+        _timestampText: timestamp ? displayDate(timestamp) : firstValue(row, ["timestamp", "Call_Date"]),
+        _subscriberMsisdn: firstValue(row, ["Mobile_No", "caller_msisdn", "caller_id"]),
+        _otherParty: firstValue(row, ["Other_Party_No", "receiver_msisdn", "receiver_id"]),
+        _type: firstValue(row, ["Call_Type", "Service_Type", "call_type"]) || "CDR",
+        _durationSeconds: number(firstValue(row, ["Call_Duration", "duration_seconds"])),
+        _tower: firstValue(row, ["First_Cell_Desc", "routing_tower", "First_Cell_id"]),
+        _circle: firstValue(row, ["Roaming Circle", "LRN_LSA", "telecom_circle"])
+      };
+    }
+
+    function normalizeSession(row) {
+      const timestamp = parseDate(firstValue(row, ["TIME1 (dd/MM/yyyy HH:mm:ss)", "timestamp"]))
+        || parseDateParts(
+          row["Start Date of Public IP Address allocation (dd/mm/yyyy)"],
+          row["IST Start Time of Public IP address allocation (hh:mm:ss)"]
+        );
+      const upKb = number(firstValue(row, ["Data Volume Up Link"]));
+      const downKb = number(firstValue(row, ["Data Volume Down Link"]));
+      const directMb = number(firstValue(row, ["megabytes_transferred"]));
+      return {
+        ...row,
+        _timestamp: timestamp,
+        _timestampText: timestamp ? displayDate(timestamp) : firstValue(row, ["TIME1 (dd/MM/yyyy HH:mm:ss)", "timestamp"]),
+        _subscriberId: firstValue(row, ["User Id for internet Access based on authentication", "subscriber_id"]),
+        _subscriberMsisdn: firstValue(row, ["Landline/MSISDN/MDN/Leased Circuit ID for Internet Access", "msisdn"]),
+        _sourceIp: firstValue(row, ["Source IP Address"]),
+        _destinationIp: firstValue(row, ["Destination IP Address", "destination_ip"]) || "Unknown",
+        _durationSeconds: number(firstValue(row, ["Session Duration (Seconds)", "duration_seconds"])),
+        _megabytes: directMb || (upKb + downKb) / 1024,
+        _apn: firstValue(row, ["Access Point Name", "apn"]),
+        _circle: firstValue(row, ["Roaming Circle", "telecom_circle"])
+      };
+    }
+
+    function countBy(rows, key) {
+      const counts = new Map();
+      rows.forEach((row) => {
+        const value = row[key] || "Unknown";
+        counts.set(value, (counts.get(value) || 0) + 1);
+      });
+      return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    }
+
+    function topEntries(entries, limit) {
+      return entries.slice(0, limit);
+    }
+
+    function setStatus(kind, message) {
+      const dot = $("statusDot");
+      dot.className = "status-dot";
+      if (kind === "ready") dot.classList.add("ready");
+      if (kind === "error") dot.classList.add("error");
+      dot.title = message;
+      $("runSummary").textContent = message;
+    }
+
+    function showBanner(message) {
+      $("loadBanner").classList.add("visible");
+      $("loadMessage").textContent = message;
+    }
+
+    function hideBanner() {
+      $("loadBanner").classList.remove("visible");
+      $("loadMessage").textContent = "";
+    }
+
+    function drawNoData(canvas, message) {
+      const ctx = setupCanvas(canvas);
+      ctx.fillStyle = "#647080";
+      ctx.font = "14px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+    }
+
+    function setupCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(320, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(220, Math.floor(rect.height * dpr));
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      return ctx;
+    }
+
+    function drawBarChart(canvasId, entries, options = {}) {
+      const canvas = $(canvasId);
+      if (!entries.length) return drawNoData(canvas, "No data");
+
+      const ctx = setupCanvas(canvas);
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      const margin = { top: 22, right: 16, bottom: 42, left: 46 };
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+      const maxVal = Math.max(...entries.map((entry) => entry[1]), 1);
+      const barGap = 7;
+      const barW = Math.max(8, (plotW - barGap * (entries.length - 1)) / entries.length);
+
+      ctx.strokeStyle = "#d8e0e8";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, margin.top + plotH);
+      ctx.lineTo(margin.left + plotW, margin.top + plotH);
+      ctx.stroke();
+
+      entries.forEach(([label, value], index) => {
+        const x = margin.left + index * (barW + barGap);
+        const h = (value / maxVal) * plotH;
+        const y = margin.top + plotH - h;
+        ctx.fillStyle = options.colors?.[index % options.colors.length] || palette[index % palette.length];
+        ctx.fillRect(x, y, barW, h);
+
+        ctx.fillStyle = "#647080";
+        ctx.font = "12px Inter, sans-serif";
+        ctx.textAlign = "center";
+        const shortLabel = String(label).length > 12 ? String(label).slice(0, 11) + "." : String(label);
+        ctx.fillText(shortLabel, x + barW / 2, height - 18);
+      });
+
+      ctx.fillStyle = "#18202b";
+      ctx.font = "12px Inter, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(fmt(maxVal), margin.left - 8, margin.top + 4);
+      ctx.fillText("0", margin.left - 8, margin.top + plotH + 4);
+    }
+
+    function drawLineChart(canvasId, series) {
+      const canvas = $(canvasId);
+      const ctx = setupCanvas(canvas);
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      const margin = { top: 22, right: 20, bottom: 34, left: 46 };
+      const plotW = width - margin.left - margin.right;
+      const plotH = height - margin.top - margin.bottom;
+      const maxVal = Math.max(...series.flatMap((s) => s.values), 1);
+
+      ctx.strokeStyle = "#d8e0e8";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i += 1) {
+        const y = margin.top + (plotH / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(margin.left + plotW, y);
+        ctx.stroke();
+      }
+
+      series.forEach((s) => {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        s.values.forEach((value, index) => {
+          const x = margin.left + (plotW / 23) * index;
+          const y = margin.top + plotH - (value / maxVal) * plotH;
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = s.color;
+        s.values.forEach((value, index) => {
+          const x = margin.left + (plotW / 23) * index;
+          const y = margin.top + plotH - (value / maxVal) * plotH;
+          ctx.beginPath();
+          ctx.arc(x, y, 2.7, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+
+      ctx.fillStyle = "#647080";
+      ctx.font = "12px Inter, sans-serif";
+      ctx.textAlign = "center";
+      for (let h = 0; h < 24; h += 3) {
+        const x = margin.left + (plotW / 23) * h;
+        ctx.fillText(String(h).padStart(2, "0"), x, height - 14);
+      }
+      ctx.textAlign = "right";
+      ctx.fillText(fmt(maxVal), margin.left - 8, margin.top + 4);
+      ctx.fillText("0", margin.left - 8, margin.top + plotH + 4);
+    }
+
+    function drawDonutChart(canvasId, entries) {
+      const canvas = $(canvasId);
+      if (!entries.length) return drawNoData(canvas, "No data");
+
+      const ctx = setupCanvas(canvas);
+      const rect = canvas.getBoundingClientRect();
+      const cx = rect.width * 0.42;
+      const cy = rect.height * 0.48;
+      const radius = Math.min(rect.width, rect.height) * 0.28;
+      const total = entries.reduce((sum, entry) => sum + entry[1], 0) || 1;
+      let angle = -Math.PI / 2;
+
+      entries.forEach(([label, value], index) => {
+        const slice = (value / total) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, angle, angle + slice);
+        ctx.closePath();
+        ctx.fillStyle = palette[index % palette.length];
+        ctx.fill();
+        angle += slice;
+      });
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 0.58, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.fillStyle = "#18202b";
+      ctx.font = "700 18px Inter, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(fmt(total), cx, cy + 6);
+
+      const legendX = rect.width * 0.7;
+      let legendY = 48;
+      ctx.textAlign = "left";
+      ctx.font = "12px Inter, sans-serif";
+      entries.forEach(([label, value], index) => {
+        ctx.fillStyle = palette[index % palette.length];
+        ctx.fillRect(legendX, legendY - 10, 10, 10);
+        ctx.fillStyle = "#18202b";
+        ctx.fillText(`${label}: ${fmt(value)}`, legendX + 16, legendY);
+        legendY += 23;
+      });
+    }
+
+    function renderKPIs() {
+      const { subscribers, calls, sessions, friendEdges, inferredEdges } = state.data;
+      const coreCount = subscribers.filter((row) => isTruthy(row.is_core_user)).length;
+      const totalMb = sessions.reduce((sum, row) => sum + number(row._megabytes), 0);
+      const avgDuration = calls.length
+        ? calls.reduce((sum, row) => sum + number(row._durationSeconds), 0) / calls.length
+        : 0;
+      const inferredShare = friendEdges.length ? inferredEdges.length / friendEdges.length : 0;
+
+      const cards = [
+        ["Subscribers", subscribers.length, `${fmt(coreCount)} core users`],
+        ["CDR Rows", calls.length, `Avg duration ${avgDuration.toFixed(0)} sec`],
+        ["IPDR Rows", sessions.length, `${fmt(totalMb)} MB transferred`],
+        ["Friend Edges", friendEdges.length, `${pct(inferredShare)} GAN inferred`],
+        ["GAN Inferred", inferredEdges.length, "Ranked by friend score"],
+        ["Circles", countBy(subscribers, "telecom_circle").length, "Synthetic subscriber geography"]
+      ];
+
+      $("kpiGrid").innerHTML = cards.map(([label, value, note]) => `
+        <article class="kpi-card">
+          <div class="kpi-label">${label}</div>
+          <div class="kpi-value">${fmt(value)}</div>
+          <div class="kpi-note">${note}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderOverview() {
+      const callsByHour = Array.from({ length: 24 }, () => 0);
+      const sessionsByHour = Array.from({ length: 24 }, () => 0);
+      state.data.calls.forEach((row) => {
+        const date = row._timestamp;
+        if (date) callsByHour[date.getHours()] += 1;
+      });
+      state.data.sessions.forEach((row) => {
+        const date = row._timestamp;
+        if (date) sessionsByHour[date.getHours()] += 1;
+      });
+
+      drawLineChart("hourlyChart", [
+        { label: "Calls", color: "#2563eb", values: callsByHour },
+        { label: "Sessions", color: "#059669", values: sessionsByHour }
+      ]);
+
+      drawDonutChart("edgeSourceChart", [
+        ["Observed", state.data.friendEdges.filter((row) => isTruthy(row.is_observed_training_edge)).length],
+        ["Inferred", state.data.friendEdges.filter((row) => isTruthy(row.is_gan_inferred_friend)).length]
+      ]);
+      drawBarChart("circleChart", topEntries(countBy(state.data.subscribers, "telecom_circle"), 8));
+      drawDonutChart("deviceChart", countBy(state.data.subscribers, "device_capability"));
+      drawBarChart("destIpChart", topEntries(countBy(state.data.sessions, "_destinationIp"), 6));
+    }
+
+    function buildIndexes() {
+      const subscriberById = new Map();
+      const subscriberSearch = new Map();
+      const subscriberByLookup = new Map();
+      state.data.subscribers.forEach((row) => {
+        subscriberById.set(row.subscriber_id, row);
+        [row.subscriber_id, row.msisdn, row.source_identifier, row.imei, row.imsi].forEach((key) => {
+          addLookup(subscriberSearch, key, row.subscriber_id);
+          addLookup(subscriberByLookup, key, row.subscriber_id);
+        });
+      });
+
+      const edgesBySubscriber = new Map();
+      const degree = new Map();
+      state.data.friendEdges.forEach((edge) => {
+        const u = edge.subscriber_id_u;
+        const v = edge.subscriber_id_v;
+        if (!edgesBySubscriber.has(u)) edgesBySubscriber.set(u, []);
+        if (!edgesBySubscriber.has(v)) edgesBySubscriber.set(v, []);
+        edgesBySubscriber.get(u).push(edge);
+        edgesBySubscriber.get(v).push(edge);
+        degree.set(u, (degree.get(u) || 0) + 1);
+        degree.set(v, (degree.get(v) || 0) + 1);
+      });
+
+      const callsBySubscriber = new Map();
+      state.data.calls.forEach((call) => {
+        const subscriberId = subscriberByLookup.get(call._subscriberMsisdn.toLowerCase())
+          || subscriberByLookup.get(cleanPhoneKey(call._subscriberMsisdn));
+        if (!subscriberId) return;
+        if (!callsBySubscriber.has(subscriberId)) callsBySubscriber.set(subscriberId, []);
+        callsBySubscriber.get(subscriberId).push(call);
+      });
+
+      const sessionsBySubscriber = new Map();
+      state.data.sessions.forEach((session) => {
+        const subscriberId = subscriberByLookup.get(session._subscriberId.toLowerCase())
+          || subscriberByLookup.get(session._subscriberMsisdn.toLowerCase())
+          || subscriberByLookup.get(cleanPhoneKey(session._subscriberMsisdn));
+        if (!subscriberId) return;
+        if (!sessionsBySubscriber.has(subscriberId)) sessionsBySubscriber.set(subscriberId, []);
+        sessionsBySubscriber.get(subscriberId).push(session);
+      });
+
+      state.indexes = {
+        subscriberById,
+        subscriberSearch,
+        subscriberByLookup,
+        edgesBySubscriber,
+        callsBySubscriber,
+        sessionsBySubscriber,
+        degree
+      };
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function trustedHtml(html) {
+      return { trustedHtml: String(html) };
+    }
+
+    function renderCell(cell) {
+      if (cell && typeof cell === "object" && Object.hasOwn(cell, "trustedHtml")) {
+        return cell.trustedHtml;
+      }
+      return escapeHtml(cell);
+    }
+
+    function subscriberButton(subscriberId, label = subscriberId) {
+      if (!subscriberId) return "";
+      return trustedHtml(`<button class="user-link" data-subscriber-id="${escapeHtml(subscriberId)}">${escapeHtml(label)}</button>`);
+    }
+
+    function renderTables() {
+      const inferred = state.data.inferredEdges
+        .slice()
+        .sort((a, b) => number(b.gan_friend_score) - number(a.gan_friend_score))
+        .slice(0, 100);
+      renderTable("topEdgesTable", ["Score", "Subscriber U", "Subscriber V", "Source U", "Source V"], inferred, (row) => [
+        Number(row.gan_friend_score).toFixed(4),
+        subscriberButton(row.subscriber_id_u),
+        subscriberButton(row.subscriber_id_v),
+        row.source_identifier_u || row.msisdn_u,
+        row.source_identifier_v || row.msisdn_v
+      ]);
+
+      const degreeRows = [...state.indexes.degree.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 100)
+        .map(([subscriberId, edgeCount]) => {
+          const sub = state.indexes.subscriberById.get(subscriberId) || {};
+          return { subscriberId, edgeCount, msisdn: sub.msisdn, circle: sub.telecom_circle, source: sub.source_identifier };
+        });
+
+      renderTable("degreeTable", ["Subscriber", "Edges", "MSISDN", "Circle", "Source ID"], degreeRows, (row) => [
+        subscriberButton(row.subscriberId),
+        fmt(row.edgeCount),
+        row.msisdn,
+        row.circle,
+        row.source
+      ]);
+    }
+
+    function renderTable(tableId, headers, rows, mapper) {
+      const table = $(tableId);
+      if (!rows.length) {
+        table.innerHTML = `<tbody><tr><td class="empty-state" colspan="${headers.length}">No rows available</td></tr></tbody>`;
+        return;
+      }
+      table.innerHTML = `
+        <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${rows.map((row) => `<tr>${mapper(row).map((cell) => `<td>${renderCell(cell)}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      `;
+    }
+
+    function seededPosition(id, width, height) {
+      let hash = 0;
+      for (let i = 0; i < id.length; i += 1) {
+        hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+      }
+      const a = ((hash % 10000) / 10000) * Math.PI * 2;
+      const r = 0.22 + (((hash >>> 8) % 10000) / 10000) * 0.32;
+      return {
+        x: width / 2 + Math.cos(a) * width * r,
+        y: height / 2 + Math.sin(a) * height * r
+      };
+    }
+
+    function drawNetwork() {
+      const canvas = $("networkCanvas");
+      const ctx = setupCanvas(canvas);
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      const limit = Number($("edgeLimit").value);
+      $("edgeLimitValue").textContent = limit;
+
+      const edges = state.data.inferredEdges
+        .slice()
+        .sort((a, b) => number(b.gan_friend_score) - number(a.gan_friend_score))
+        .slice(0, limit);
+
+      const nodeMap = new Map();
+      const degree = new Map();
+      edges.forEach((edge) => {
+        [edge.subscriber_id_u, edge.subscriber_id_v].forEach((id) => {
+          if (!nodeMap.has(id)) {
+            const p = seededPosition(id, width, height);
+            nodeMap.set(id, { id, x: p.x, y: p.y, vx: 0, vy: 0 });
+          }
+          degree.set(id, (degree.get(id) || 0) + 1);
+        });
+      });
+      const nodes = [...nodeMap.values()];
+
+      for (let step = 0; step < 120; step += 1) {
+        for (let i = 0; i < nodes.length; i += 1) {
+          for (let j = i + 1; j < nodes.length; j += 1) {
+            const a = nodes[i];
+            const b = nodes[j];
+            let dx = a.x - b.x;
+            let dy = a.y - b.y;
+            let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const force = Math.min(1.8, 1800 / (dist * dist));
+            dx /= dist;
+            dy /= dist;
+            a.vx += dx * force;
+            a.vy += dy * force;
+            b.vx -= dx * force;
+            b.vy -= dy * force;
+          }
+        }
+
+        edges.forEach((edge) => {
+          const a = nodeMap.get(edge.subscriber_id_u);
+          const b = nodeMap.get(edge.subscriber_id_v);
+          let dx = b.x - a.x;
+          let dy = b.y - a.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const target = 88;
+          const force = (dist - target) * 0.006;
+          dx /= dist;
+          dy /= dist;
+          a.vx += dx * force;
+          a.vy += dy * force;
+          b.vx -= dx * force;
+          b.vy -= dy * force;
+        });
+
+        nodes.forEach((node) => {
+          node.vx += (width / 2 - node.x) * 0.002;
+          node.vy += (height / 2 - node.y) * 0.002;
+          node.x += node.vx;
+          node.y += node.vy;
+          node.vx *= 0.78;
+          node.vy *= 0.78;
+          node.x = Math.max(20, Math.min(width - 20, node.x));
+          node.y = Math.max(20, Math.min(height - 20, node.y));
+        });
+      }
+
+      edges.forEach((edge) => {
+        const a = nodeMap.get(edge.subscriber_id_u);
+        const b = nodeMap.get(edge.subscriber_id_v);
+        const score = number(edge.gan_friend_score);
+        ctx.strokeStyle = `rgba(37, 99, 235, ${0.18 + Math.min(score, 1) * 0.58})`;
+        ctx.lineWidth = 1 + score * 2.6;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      });
+
+      nodes.forEach((node) => {
+        const d = degree.get(node.id) || 1;
+        const radius = 4 + Math.min(10, Math.sqrt(d) * 2);
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, radius + 2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.92)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = d > 4 ? "#e11d48" : d > 2 ? "#d97706" : "#0891b2";
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "#647080";
+      ctx.font = "12px Inter, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(`${fmt(nodes.length)} subscribers shown, ${fmt(edges.length)} top inferred edges`, 16, 24);
+    }
+
+    function renderSubscriberDetails(subscriberId) {
+      const sub = state.indexes.subscriberById.get(subscriberId);
+      if (!sub) {
+        $("subscriberDetails").className = "empty-state";
+        $("subscriberDetails").textContent = "No matching subscriber found.";
+        renderTable("subscriberEdgesTable", [], [], () => []);
+        renderTable("subscriberCallsTable", [], [], () => []);
+        renderTable("subscriberSessionsTable", [], [], () => []);
+        return;
+      }
+
+      const edges = (state.indexes.edgesBySubscriber.get(subscriberId) || [])
+        .slice()
+        .sort((a, b) => number(b.gan_friend_score) - number(a.gan_friend_score));
+      const calls = (state.indexes.callsBySubscriber.get(subscriberId) || [])
+        .slice()
+        .sort((a, b) => (b._timestamp?.getTime() || 0) - (a._timestamp?.getTime() || 0));
+      const sessions = (state.indexes.sessionsBySubscriber.get(subscriberId) || [])
+        .slice()
+        .sort((a, b) => (b._timestamp?.getTime() || 0) - (a._timestamp?.getTime() || 0));
+      const inferredCount = edges.filter((edge) => isTruthy(edge.is_gan_inferred_friend)).length;
+      const totalCallSeconds = calls.reduce((sum, row) => sum + number(row._durationSeconds), 0);
+      const totalMb = sessions.reduce((sum, row) => sum + number(row._megabytes), 0);
+
+      $("subscriberDetails").className = "detail-list";
+      $("subscriberDetails").innerHTML = [
+        ["Subscriber", sub.subscriber_id],
+        ["MSISDN", sub.msisdn],
+        ["Source Identifier", sub.source_identifier || "Not available"],
+        ["Name", sub.fake_full_name || "Not available"],
+        ["Circle", sub.telecom_circle],
+        ["Home Tower", sub.home_tower_id],
+        ["Device", sub.device_capability],
+        ["Data Tier", sub.base_data_tier],
+        ["Connection", sub.connection_type || "Not available"],
+        ["APN", sub.apn || "Not available"],
+        ["IMEI", sub.imei || "Not available"],
+        ["IMSI", sub.imsi || "Not available"],
+        ["Friend Edges", `${fmt(edges.length)} total, ${fmt(inferredCount)} inferred`],
+        ["CDR Activity", `${fmt(calls.length)} rows, ${fmt(totalCallSeconds)} sec`],
+        ["IPDR Activity", `${fmt(sessions.length)} rows, ${totalMb.toFixed(1)} MB`]
+      ].map(([label, value]) => `
+        <div class="detail-item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>
+      `).join("");
+
+      renderTable("subscriberEdgesTable", ["Type", "Score", "Other Subscriber", "Other MSISDN", "Other Source"], edges.slice(0, 200), (edge) => {
+        const isU = edge.subscriber_id_u === subscriberId;
+        const otherId = isU ? edge.subscriber_id_v : edge.subscriber_id_u;
+        const otherMsisdn = isU ? edge.msisdn_v : edge.msisdn_u;
+        const otherSource = isU ? edge.source_identifier_v : edge.source_identifier_u;
+        const badge = trustedHtml(isTruthy(edge.is_gan_inferred_friend)
+          ? '<span class="badge inferred">GAN inferred</span>'
+          : '<span class="badge observed">Observed</span>');
+        return [
+          badge,
+          edge.gan_friend_score ? Number(edge.gan_friend_score).toFixed(4) : "",
+          subscriberButton(otherId),
+          otherMsisdn,
+          otherSource
+        ];
+      });
+
+      renderTable("subscriberCallsTable", ["Time", "Type", "Other Party", "Duration", "Tower", "Circle"], calls.slice(0, 200), (call) => [
+        call._timestampText,
+        call._type,
+        call._otherParty,
+        `${fmt(call._durationSeconds)} sec`,
+        call._tower,
+        call._circle
+      ]);
+
+      renderTable("subscriberSessionsTable", ["Time", "Destination IP", "MB", "Duration", "APN", "Source IP"], sessions.slice(0, 200), (session) => [
+        session._timestampText,
+        session._destinationIp,
+        number(session._megabytes).toFixed(1),
+        `${fmt(session._durationSeconds)} sec`,
+        session._apn,
+        session._sourceIp
+      ]);
+    }
+
+    function findSubscriber(query) {
+      const needle = query.trim().toLowerCase();
+      if (!needle) return null;
+      if (state.indexes.subscriberSearch.has(needle)) return state.indexes.subscriberSearch.get(needle);
+      const digits = cleanPhoneKey(needle);
+      if (digits && state.indexes.subscriberSearch.has(digits)) return state.indexes.subscriberSearch.get(digits);
+      for (const [key, subscriberId] of state.indexes.subscriberSearch.entries()) {
+        if (key.includes(needle)) return subscriberId;
+        if (digits && key.includes(digits)) return subscriberId;
+      }
+      return null;
+    }
+
+    function renderFiles() {
+      const rows = [
+        ["Subscribers", files.subscribers, state.data.subscribers.length],
+        ["Clean CDR schema", files.calls, state.data.calls.length],
+        ["Clean IPDR schema", files.sessions, state.data.sessions.length],
+        ["Clean friend edges", files.friendEdges, state.data.friendEdges.length],
+        ["Clean GAN inferred edges", files.inferredEdges, state.data.inferredEdges.length]
+      ];
+
+      $("fileList").innerHTML = rows.map(([label, file, rows]) => `
+        <div class="file-row">
+          <div>
+            <strong>${file}</strong>
+            <div class="panel-subtitle">${label}</div>
+          </div>
+          <span class="badge">${fmt(rows)} rows</span>
+        </div>
+      `).join("");
+    }
+
+    function renderAll() {
+      renderKPIs();
+      renderOverview();
+      renderTables();
+      drawNetwork();
+      renderFiles();
+
+      const first = state.data.sessions[0]?._subscriberId
+        || state.indexes.subscriberByLookup.get(state.data.calls[0]?._subscriberMsisdn?.toLowerCase())
+        || state.data.inferredEdges[0]?.subscriber_id_u
+        || state.data.subscribers[0]?.subscriber_id;
+      if (first && !state.selectedSubscriberId) {
+        state.selectedSubscriberId = first;
+        $("subscriberSearch").value = first;
+      }
+      renderSubscriberDetails(state.selectedSubscriberId);
+    }
+
+    async function loadAll() {
+      hideBanner();
+      setStatus("loading", "Loading generated CSVs");
+      try {
+        const [subscribers, rawCalls, rawSessions, friendEdges, inferredEdges] = await Promise.all([
+          loadCSV(files.subscribers),
+          loadCSV(files.calls),
+          loadCSV(files.sessions),
+          loadCSV(files.friendEdges),
+          loadCSV(files.inferredEdges)
+        ]);
+        const calls = rawCalls.map(normalizeCall);
+        const sessions = rawSessions.map(normalizeSession);
+        state.data = { subscribers, calls, sessions, friendEdges, inferredEdges };
+        state.selectedSubscriberId = null;
+        buildIndexes();
+        renderAll();
+        setStatus("ready", `Loaded clean CDR/IPDR plus ${fmt(friendEdges.length)} friend edges`);
+      } catch (error) {
+        console.error(error);
+        setStatus("error", "CSV load failed");
+        showBanner(`Could not load the generated CSVs. Run this page through a local server from the project folder, then reload. Details: ${error.message}`);
+      }
+    }
+
+    document.querySelectorAll(".tab-button").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab-button").forEach((tab) => tab.classList.remove("active"));
+        document.querySelectorAll(".section").forEach((section) => section.classList.remove("active"));
+        button.classList.add("active");
+        $(button.dataset.tab).classList.add("active");
+        if (button.dataset.tab === "network") requestAnimationFrame(drawNetwork);
+      });
+    });
+
+    $("reloadButton").addEventListener("click", loadAll);
+    $("redrawGraph").addEventListener("click", drawNetwork);
+    $("edgeLimit").addEventListener("input", drawNetwork);
+    $("subscriberSearch").addEventListener("input", (event) => {
+      const subscriberId = findSubscriber(event.target.value);
+      state.selectedSubscriberId = subscriberId;
+      renderSubscriberDetails(subscriberId);
+    });
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-subscriber-id]");
+      if (!button) return;
+      const subscriberId = button.dataset.subscriberId;
+      state.selectedSubscriberId = subscriberId;
+      $("subscriberSearch").value = subscriberId;
+      document.querySelector('[data-tab="subscriber"]').click();
+      renderSubscriberDetails(subscriberId);
+    });
+    window.addEventListener("resize", () => {
+      if (!state.data.subscribers) return;
+      renderOverview();
+      drawNetwork();
+    });
+
+    loadAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+{
+    "tables": {
+        "subscribers": {
+            "primary_key": "subscriber_id",
+            "columns": {
+                "subscriber_id": {
+                    "sdtype": "id"
+                },
+                "msisdn": {
+                    "sdtype": "categorical"
+                },
+                "telecom_circle": {
+                    "sdtype": "categorical"
+                },
+                "home_tower_id": {
+                    "sdtype": "id"
+                },
+                "device_capability": {
+                    "sdtype": "categorical"
+                },
+                "base_data_tier": {
+                    "sdtype": "categorical"
+                },
+                "is_core_user": {
+                    "sdtype": "categorical"
+                },
+                "fake_full_name": {
+                    "sdtype": "categorical"
+                },
+                "fake_address": {
+                    "sdtype": "categorical"
+                },
+                "imei": {
+                    "sdtype": "categorical"
+                },
+                "imsi": {
+                    "sdtype": "categorical"
+                },
+                "connection_type": {
+                    "sdtype": "categorical"
+                },
+                "apn": {
+                    "sdtype": "categorical"
+                },
+                "source_identifier": {
+                    "sdtype": "categorical"
+                }
+            }
+        },
+        "call_logs": {
+            "primary_key": "call_id",
+            "columns": {
+                "call_id": {
+                    "sdtype": "id"
+                },
+                "caller_id": {
+                    "sdtype": "id"
+                },
+                "receiver_msisdn": {
+                    "sdtype": "categorical"
+                },
+                "contact_type": {
+                    "sdtype": "categorical"
+                },
+                "timestamp": {
+                    "sdtype": "datetime"
+                },
+                "duration_seconds": {
+                    "sdtype": "categorical"
+                },
+                "routing_tower": {
+                    "sdtype": "categorical"
+                },
+                "is_core_user": {
+                    "sdtype": "categorical"
+                }
+            }
+        },
+        "internet_sessions": {
+            "primary_key": "session_id",
+            "columns": {
+                "session_id": {
+                    "sdtype": "id"
+                },
+                "subscriber_id": {
+                    "sdtype": "id"
+                },
+                "timestamp": {
+                    "sdtype": "datetime"
+                },
+                "destination_ip": {
+                    "sdtype": "categorical"
+                },
+                "destination_port": {
+                    "sdtype": "categorical"
+                },
+                "megabytes_transferred": {
+                    "sdtype": "numerical"
+                },
+                "is_core_user": {
+                    "sdtype": "categorical"
+                }
+            }
+        }
+    },
+    "relationships": [
+        {
+            "parent_table_name": "subscribers",
+            "child_table_name": "internet_sessions",
+            "parent_primary_key": "subscriber_id",
+            "child_foreign_key": "subscriber_id"
+        },
+        {
+            "parent_table_name": "subscribers",
+            "child_table_name": "call_logs",
+            "parent_primary_key": "subscriber_id",
+            "child_foreign_key": "caller_id"
+        }
+    ],
+    "METADATA_SPEC_VERSION": "MULTI_TABLE_V1"
+}

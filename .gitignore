@@ -1,0 +1,40 @@
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local runtime state and generated outputs
+.cgan_gui/
+.agents/
+.codex/
+*.log
+output/
+tmp/
+trained_model/
+*.pt
+*.pth
+*.pkl
+*.joblib
+
+# Raw root-level working datasets are intentionally kept outside this repo
+/*.csv
+
+# Frontend dependencies and build products
+india-agent-visualizer/node_modules/
+india-agent-visualizer/.next/
+india-agent-visualizer/.vinext/
+india-agent-visualizer/.wrangler/
+india-agent-visualizer/build/
+india-agent-visualizer/dist/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

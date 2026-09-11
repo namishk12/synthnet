@@ -1,0 +1,11 @@
+flask
+numpy
+pandas
+scikit-learn
+openpyxl
+python-dateutil
+pytest
+torch
+networkx
+faker
+sdv
